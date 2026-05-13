@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>产业趋势交易系统 · 行动清单</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --card: #161b22;
+            --border: #30363d;
+            --text: #c9d1d9;
+            --green: #3fb950;
+            --red: #f85149;
+            --yellow: #d2991d;
+            --accent: #58a6ff;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            padding: 12px;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.5;
+            transition: background 0.5s;
+        }
+        body.ban-day { background: #3d1111 !important; }
+        .header {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        .header h1 { font-size: 20px; margin-bottom: 4px; }
+        .date { font-size: 14px; color: #8b949e; }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 8px;
+        }
+        .status-go { background: #1a3d1a; color: var(--green); border: 1px solid var(--green); }
+        .status-no { background: #3d1a1a; color: var(--red); border: 1px solid var(--red); }
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        .card h3 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px;
+        }
+        .check-item:last-child { border-bottom: none; }
+        .check-item input[type="checkbox"] {
+            width: 24px; height: 24px;
+            accent-color: var(--green);
+            flex-shrink: 0;
+        }
+        .check-item input[type="text"] {
+            width: 60px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .signal-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .signal-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 13px;
+        }
+        .signal-card .status { font-weight: bold; font-size: 16px; margin-top: 4px; }
+        .signal-card .triggered { color: var(--green); }
+        .signal-card .waiting { color: var(--yellow); }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .btn-stop { background: var(--red); color: white; }
+        .btn-reset { background: var(--border); color: var(--text); }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px 6px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        th { color: #8b949e; font-weight: normal; font-size: 12px; }
+        input[type="number"] {
+            width: 70px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 6px;
+            border-radius: 6px;
+            font-size: 13px;
+            text-align: center;
+        }
+        .stop-counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 18px;
+        }
+        .stop-counter button {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 24px;
+            cursor: pointer;
+        }
+        .stop-num { font-size: 36px; font-weight: bold; }
+        .stop-num.warn { color: var(--red); animation: blink 0.8s infinite; }
+        @keyframes blink { 50% { opacity: 0.3; } }
+        .alert-box {
+            background: #3d1a1a;
+            border: 2px solid var(--red);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            color: var(--red);
+            font-weight: bold;
+            font-size: 16px;
+            display: none;
+        }
+        .alert-box.show { display: block; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🎯 产业趋势交易系统</h1>
+    <div class="date" id="todayDate"></div>
+    <div class="status-badge status-go" id="dayStatus">✅ 正常交易日</div>
+</div>
+
+<!-- ===== 前置过滤器 ===== -->
+<div class="card">
+    <h3>📋 每日盘前检查（5分钟）</h3>
+    <div class="check-item">
+        <input type="checkbox" id="chk1" onchange="checkAll()">
+        <label>成交额 &lt; 1万亿 → 禁渔</label>
+        <input type="text" id="amount" placeholder="手动填" onchange="saveData();checkAll()" inputmode="numeric">
+    </div>
+    <div class="check-item">
+        <input type="checkbox" id="chk2" onchange="checkAll()">
+        <label>跌停家数 &gt; 50家 → 禁渔</label>
+        <input type="text" id="limitDown" placeholder="手动填" onchange="saveData();checkAll()" inputmode="numeric">
+    </div>
+    <div class="check-item">
+        <input type="checkbox" id="chk3" onchange="checkAll()">
+        <label>沪深300 & 科创50 同时低于20/60/120均线 → 禁渔</label>
+    </div>
+    <div class="check-item">
+        <input type="checkbox" id="chk4" onchange="checkAll()">
+        <label>产业逻辑无重大动摇</label>
+    </div>
+</div>
+
+<!-- ===== 信号面板 ===== -->
+<div class="card">
+    <h3>📡 四维量化信号</h3>
+    <div class="signal-box">
+        <div class="signal-card">
+            深度回调型<br>
+            <span class="status waiting" id="sig1">⏳ 待触发</span>
+            <br><button style="margin-top:6px;font-size:12px;padding:4px 12px;" onclick="toggleSignal('sig1')">切换</button>
+        </div>
+        <div class="signal-card">
+            强势横盘型<br>
+            <span class="status waiting" id="sig2">⏳ 待触发</span>
+            <br><button style="margin-top:6px;font-size:12px;padding:4px 12px;" onclick="toggleSignal('sig2')">切换</button>
+        </div>
+        <div class="signal-card" style="grid-column: span 2;">
+            极端回调型（黄金坑）<br>
+            <span class="status waiting" id="sig3">⚠️ 极少出现</span>
+            <br><button style="margin-top:6px;font-size:12px;padding:4px 12px;" onclick="toggleSignal('sig3')">切换</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 持仓止盈监控 ===== -->
+<div class="card">
+    <h3>💰 持仓止盈监控（距15%止盈线）</h3>
+    <table id="posTable">
+        <thead>
+            <tr><th>品种</th><th>成本</th><th>现价</th><th>收益率</th><th>距止盈</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>财通集成电路</td>
+                <td><input type="number" class="cost" onchange="updateProfit()" value="1.0000"></td>
+                <td><input type="number" class="price" onchange="updateProfit()" value="1.0000"></td>
+                <td class="profit">0%</td>
+                <td class="to15">15%</td>
+            </tr>
+            <tr>
+                <td>大摩数字经济</td>
+                <td><input type="number" class="cost" onchange="updateProfit()" value="1.0000"></td>
+                <td><input type="number" class="price" onchange="updateProfit()" value="1.0000"></td>
+                <td class="profit">0%</td>
+                <td class="to15">15%</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- ===== 连续止损计数器 ===== -->
+<div class="card">
+    <h3>🛑 连续止损计数</h3>
+    <div class="stop-counter">
+        <button onclick="changeStop(-1)">−</button>
+        <span class="stop-num" id="stopCount">0</span>
+        <button onclick="changeStop(1)">+</button>
+    </div>
+    <div class="alert-box" id="stopAlert">
+        ⚠️ 连续止损已达3次！<br>强制空仓1个月，深度复盘！
+    </div>
+    <button class="btn btn-reset" onclick="resetStop()">🔄 重置计数器</button>
+</div>
+
+<!-- ===== 半年体检提醒 ===== -->
+<div class="card" style="text-align:center;">
+    <h3>📅 半年体检日</h3>
+    <p style="font-size:14px;">下一个体检日：<strong id="nextCheckDate">--</strong></p>
+    <p style="font-size:14px;" id="checkAlert"></p>
+</div>
+
+<script>
+// ===== 初始化 =====
+const today = new Date();
+document.getElementById('todayDate').textContent = 
+    `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日 周${['日','一','二','三','四','五','六'][today.getDay()]}`;
+
+// ===== 每日盘前检查 =====
+function checkAll() {
+    const c1 = document.getElementById('chk1').checked;
+    const c2 = document.getElementById('chk2').checked;
+    const c3 = document.getElementById('chk3').checked;
+    const c4 = document.getElementById('chk4').checked;
+    const allChecked = c1 && c2 && c3 && c4;
+    const anyBan = !c1 || !c2 || !c3; // 前3项任一不通过即禁渔
+    
+    const statusEl = document.getElementById('dayStatus');
+    if (anyBan) {
+        document.body.classList.add('ban-day');
+        statusEl.textContent = '⛔ 今日禁渔 · 清单作废';
+        statusEl.className = 'status-badge status-no';
+    } else if (allChecked) {
+        document.body.classList.remove('ban-
